@@ -3,12 +3,17 @@ import { Address, beginCell, internal, OutActionSendMsg, SendMode, toNano } from
 import { HighloadWallet } from "./HighloadWallet";
 import { sign, keyPairFromSecretKey } from "@ton/crypto";
 import { HighloadQueryId } from './HighloadQueryId';
+import dotenv from 'dotenv';
+import path from 'path';
 
-const secretKeyHex = "020c8bb18fc4d6e02e3560e2c8acf4477b771d046eefabb8ee771e9c036c278faf190a892e5cc72446a5d8f5ca70977eb47dca6ad02913f7d358e57c7a93396f";
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+console.log("SECRET_KEY:", process.env.SECRET_KEY);
+const secretKeyHex = process.env.SECRET_KEY || "";
 
 const client = new TonApiClient({
     baseUrl: 'https://testnet.tonapi.io',
-    apiKey: 'AG6WCHTI5NRZZ5YAAAAK2JI4BGR6EFBKN4KLTNXNDQGMC6F3MBKQM5VKCYGOKMDCOQ6EDHI'
+    apiKey: process.env.TON_API_KEY
 });
 
 async function run(
@@ -56,7 +61,7 @@ async function run(
         })
     });
 
-    const queryHandler = HighloadQueryId.fromShiftAndBitNumber(0n, 39n);
+    const queryHandler = HighloadQueryId.fromShiftAndBitNumber(0n, 41n);
     const query = queryHandler.getNext();
 
     const subwalletId = 0;
@@ -78,16 +83,6 @@ async function run(
     // Проверяем статус транзакции
     checkTransactionStatusTonApi(messageHash)
 }
-
-run(
-    Address.parse("0QBTntndDitJzeAQ2S-lUHu3nB5534-J_1V3RTetWK0etLjz"),
-    Address.parse("0QAFyfwn13L8oi30vdWBV41zFaHzCa6mJpVEjCeaDUAqmGcO"),
-    {
-        address: Address.parse("kQA95AtAgKqGRiClI_T2JL2_DK2h-s2fFx85YukTjRnOl8UI"),
-        amount: 1 * 10 ** 6 
-    }
-);
-
 
 async function checkTransactionStatusTonApi(traceId: string, interval: number = 5000, maxWaitTime: number = 120000): Promise<boolean> {
     const startTime = Date.now();
@@ -113,8 +108,6 @@ async function checkTransactionStatusTonApi(traceId: string, interval: number = 
         } catch (error: any) {
             // Игнорируем ошибку "Invalid magic"
             if (error.message && error.message.includes('Invalid magic')) {
-                console.log('Игнорируем ошибку "Invalid magic".');
-            } else if (error.response && error.response.status === 404) {
                 console.log('Транзакция не найдена. Повторная проверка через несколько секунд...');
             } else {
                 console.error('Ошибка при получении статуса транзакции:', error.message || error);
@@ -129,3 +122,11 @@ async function checkTransactionStatusTonApi(traceId: string, interval: number = 
     console.log('Транзакция не подтверждена в течение максимального времени ожидания.');
     return false;
 }
+run(
+    Address.parse("0QBTntndDitJzeAQ2S-lUHu3nB5534-J_1V3RTetWK0etLjz"),
+    Address.parse("0QAFyfwn13L8oi30vdWBV41zFaHzCa6mJpVEjCeaDUAqmGcO"),
+    {
+        address: Address.parse("kQA95AtAgKqGRiClI_T2JL2_DK2h-s2fFx85YukTjRnOl8UI"),
+        amount: 1 * 10 ** 6 
+    }
+);
