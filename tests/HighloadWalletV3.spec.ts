@@ -12,6 +12,7 @@ import { MsgGenerator } from '../wrappers/MsgGenerator';
 import {HighloadQueryId} from "../wrappers/HighloadQueryId";
 
 
+
 describe('HighloadWalletV3', () => {
     let keyPair: KeyPair;
     let code: Cell;
@@ -894,3 +895,5 @@ describe('HighloadWalletV3', () => {
         });
     });
 });
+
+// hey

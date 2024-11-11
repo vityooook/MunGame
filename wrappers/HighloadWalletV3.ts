@@ -32,6 +32,7 @@ export type HighloadWalletV3Config = {
 export const TIMESTAMP_SIZE = 64;
 export const TIMEOUT_SIZE = 22;
 
+
 export function highloadWalletV3ConfigToCell(config: HighloadWalletV3Config): Cell {
     return beginCell()
         .storeBuffer(config.publicKey)

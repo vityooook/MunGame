@@ -3,6 +3,7 @@ const SHIFT_SIZE = 13n; // 13 bit
 const MAX_BIT_NUMBER = 1022n;
 const MAX_SHIFT = 8191n; // 2^13 = 8192
 
+
 export class HighloadQueryId {
     private shift: bigint; // [0 .. 8191]
     private bitnumber: bigint; // [0 .. 1022]
@@ -79,3 +80,5 @@ export class HighloadQueryId {
         return this.bitnumber + this.shift * 1023n;
     }
 }
+
+// hey
