@@ -6,12 +6,14 @@ import { HighloadQueryId } from './HighloadQueryId';
 import dotenv from 'dotenv';
 import path from 'path';
 
+// Load environment variables from the .env file
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-const secretKeyHex = process.env.SECRET_KEY || "";
+const secretKeyHex = process.env.SECRET_KEY || ""; // Retrieve the secret key from environment variables
 
+// Initialize the TonApiClient with testnet base URL and API key
 const client = new TonApiClient({
-    baseUrl: 'https://testnet.tonapi.io',
+    baseUrl: 'https://testnet.tonapi.io', // if using mainnet, change to https://tonapi.io
     apiKey: process.env.TON_API_KEY
 });
 
@@ -23,26 +25,44 @@ async function run(
         amount: number;
     }
 ) {
-    const wallet = HighloadWallet.connectWallet(highloadWalletAddress, client);
+    // Connect to the highload wallet using the specified address and API client
+    const wallet = HighloadWallet.connectWallet(highloadWalletAddress, client); 
     const walletKeyPair = keyPairFromSecretKey(Buffer.from(secretKeyHex, 'hex'));
 
+    // Prepare a message to send TON to the specified address
     const message = internal({
-        to: jetton.address,
-        value: toNano("0.01"),
-        body: beginCell()
+        to: sendTo,
+        value: toNano("0.01"), // Amount to send in TON
+        body: beginCell() // Message body for comments
             .storeUint(0, 32)
             .storeStringTail("MunGame best team")
             .endCell()
     })
 
-    const queryHandler = HighloadQueryId.fromShiftAndBitNumber(0n, 50n);
-    const query = queryHandler.getNext();
+    // const message = internal({ // Uncomment this block to send USDT instead
+    //     to: jetton.address,
+    //     value: toNano("0.1"), // TON for commission; part of this will return to the wallet
+    //     body: beginCell()
+    //         .storeUint(0xf8a7ea5, 32) // Opcode for jetton transfer
+    //         .storeUint(0, 64)
+    //         .storeCoins(BigInt(jetton.amount)) // Amount of jetton to transfer
+    //         .storeAddress(sendTo) // Recipient address
+    //         .storeAddress(highloadWalletAddress) // Address for response and returning TON
+    //         .storeBit(0)
+    //         .storeCoins(1)
+    //         .storeBit(0)
+    //         .endCell()
+    // })
 
-    const subwalletId = 0;
-    const timeout = 2 * 60 * 60;
-    const createdAt = Math.floor(Date.now() / 1000) - 60;
+    // Initialize query handler and retrieve the next query ID for database storage
+    const queryHandler = HighloadQueryId.fromShiftAndBitNumber(0n, 0n); // get from db
+    const query = queryHandler.getNext(); // Get the next shift and bit number. Save to db
 
-    // Отправляем транзакцию и получаем хэш сообщения
+    const subwalletId = 0; // Subwallet ID, should be stored with highload wallet
+    const timeout = 2 * 60 * 60; // Transaction timeout, should also be stored
+    const createdAt = Math.floor(Date.now() / 1000) - 60; // Transaction creation time minus delay buffer
+
+    // Send the transaction and receive the message hash to verify the transaction
     const messageHash = await wallet.sendExternalMessage(
         walletKeyPair.secretKey,
         {
@@ -55,55 +75,58 @@ async function run(
         }
     );
 
-    console.log(`Транзакция отправлена. Хэш сообщения: ${messageHash}`);
+    console.log(`Transaction sent. Message hash: ${messageHash}`);
 
-    // Проверяем статус транзакции
+    // Check the transaction status
     checkTransactionStatusTonApi(messageHash)
 }
 
 async function checkTransactionStatusTonApi(traceId: string, interval: number = 5000, maxWaitTime: number = 120000): Promise<boolean> {
     const startTime = Date.now();
 
-    // Ждём 10 секунд перед первым запуском
+    // Wait for 10 seconds before the first check
     await new Promise(resolve => setTimeout(resolve, 10000));
 
     while (Date.now() - startTime < maxWaitTime) {
         try {
+            // Fetch the transaction trace from TonAPI
             const response = await client.traces.getTrace(traceId);
             const transactionData = response.transaction;
 
-            // Проверяем успешность транзакции
+            // Check if the transaction was successful
             if (transactionData.success && transactionData.computePhase?.success && transactionData.actionPhase?.success && !transactionData.aborted) {
-                console.log('Транзакция успешно проведена.');
+                console.log('Transaction successfully completed.');
                 return true;
             } else if (transactionData.aborted) {
-                console.log('Транзакция была прервана.');
+                console.log('Transaction was aborted.');
                 return false;
             } else {
-                console.log('Транзакция ещё не завершена...');
+                console.log('Transaction is still in progress...');
             }
         } catch (error: any) {
-            // Игнорируем ошибку "Invalid magic"
+            // Ignore "Invalid magic" error
             if (error.message && error.message.includes('Invalid magic')) {
-                console.log('Транзакция не найдена. Повторная проверка через несколько секунд...');
+                console.log('Transaction not found. Retrying in a few seconds...');
             } else {
-                console.error('Ошибка при получении статуса транзакции:', error.message || error);
+                console.error('Error retrieving transaction status:', error.message || error);
                 return false;
             }
         }
 
-        // Ждём заданный интервал перед следующей проверкой
+        // Wait for the specified interval before the next check
         await new Promise(resolve => setTimeout(resolve, interval));
     }
 
-    console.log('Транзакция не подтверждена в течение максимального времени ожидания.');
+    console.log('Transaction was not confirmed within the maximum wait time.');
     return false;
 }
+
+// Example call to run function with test addresses and jetton details
 run(
     Address.parse("0QBTntndDitJzeAQ2S-lUHu3nB5534-J_1V3RTetWK0etLjz"),
     Address.parse("0QAFyfwn13L8oi30vdWBV41zFaHzCa6mJpVEjCeaDUAqmGcO"),
     {
         address: Address.parse("kQA95AtAgKqGRiClI_T2JL2_DK2h-s2fFx85YukTjRnOl8UI"),
-        amount: 1 * 10 ** 6 
+        amount: 1 * 10 ** 6 // Amount in smallest unit of jetton
     }
 );
