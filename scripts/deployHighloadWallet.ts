@@ -20,7 +20,7 @@ export async function run(provider: NetworkProvider) {
     const highloadWallet = provider.open(HighloadWalletV3.createFromConfig({
         publicKey: keyPair.publicKey,
         subwalletId: 0,
-        timeout: 2 * 60 * 60, // 2 hours
+        timeout: 12 * 60 * 60, // 12 hours
     }, await compile('HighloadWallet')));
 
     await highloadWallet.sendDeploy(provider.sender(), toNano('0.05'));
