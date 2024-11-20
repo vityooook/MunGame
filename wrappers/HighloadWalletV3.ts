@@ -16,9 +16,9 @@ import {
     toNano
 } from '@ton/core';
 // import { hex as CodeHex } from '../build/HighloadWalletV3.compiled.json';
-import {sign} from "ton-crypto";
-import {OP} from "../tests/imports/const";
-import {HighloadQueryId} from "./HighloadQueryId";
+import { sign } from "@ton/crypto";
+import { OP } from "../tests/imports/const";
+import { HighloadQueryId } from "./HighloadQueryId";
 
 // export const HighloadWalletV3Code = Cell.fromBoc(Buffer.from(CodeHex, "hex"))[0]
 
