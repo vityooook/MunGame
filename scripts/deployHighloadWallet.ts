@@ -23,7 +23,7 @@ export async function run(provider: NetworkProvider) {
         timeout: 12 * 60 * 60, // 12 hours
     }, await compile('HighloadWallet')));
 
-    await highloadWallet.sendDeploy(provider.sender(), toNano('0.05'));
+    await highloadWallet.sendDeploy(provider.sender(), toNano('2'));
 
     await provider.waitForDeploy(highloadWallet.address);
 }

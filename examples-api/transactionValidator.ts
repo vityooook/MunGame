@@ -1,5 +1,3 @@
-// src/transactionValidator.ts
-
 import { TonApiClient } from "@ton-api/client";
 
 /**
@@ -10,6 +8,7 @@ export interface TransactionDetail {
     bounced: boolean;
     success: boolean;
     aborted?: boolean;
+    value?: number; // Добавлено для проверки value
     // Добавьте другие необходимые поля при необходимости
 }
 
@@ -19,15 +18,21 @@ export interface TransactionDetail {
  * @returns true, если все транзакции и их дочерние транзакции удовлетворяют условиям, иначе false.
  */
 export function validateTransactions(transactionData: any): boolean {
+    const transaction = transactionData.transaction;
 
     // Проверяем текущую транзакцию на условия
-    if (transactionData.transaction.bounced) {
-        console.log(`Транзакция ${transactionData.transaction.hash} была отклонена (bounced = true).`);
+    if (transaction.bounced) {
+        console.log(`Транзакция ${transaction.hash} была отклонена (bounced = true).`);
         return false;
     }
 
-    if (!transactionData.transaction.success) {
-        console.log(`Транзакция ${transactionData.transaction.hash} не успешна (success = false).`);
+    // Пропускаем проверки для транзакций с value === 1
+    if (transaction.value === 1) {
+        return true;
+    }
+
+    if (!transaction.success) {
+        console.log(`Транзакция ${transaction.hash} не успешна (success = false).`);
         return false;
     }
 
@@ -74,10 +79,10 @@ export async function checkTransactionStatusTonApi(
 
             if (allTransactionsValid) {
                 console.log('Все транзакции успешно завершены без отклонений.');
-                return true; // Эта строка фактически не будет выполнена, так как process.exit(0) завершает процесс
+                return true;
             } else {
                 console.log('Транзакция не удовлетворяет условиям. Продолжаем проверку...');
-                return false
+                return false;
             }
         } catch (error: any) {
             // Игнорируем ошибку "Invalid magic"

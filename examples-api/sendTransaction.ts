@@ -54,12 +54,11 @@ async function run(
         });
 
         // Инициализация обработчика запросов и получение следующего query ID для хранения в базе данных
-        const queryHandler = HighloadQueryId.fromShiftAndBitNumber(0n, 16n); // получить из базы данных
-        const query = queryHandler.getNext(); // Получить следующий shift и bit number. Сохранить в базе данных
+        const queryHandler = HighloadQueryId.fromShiftAndBitNumber(0n, 0n).getNext(); // получить из базы данных // Получить следующий shift и bit number. Сохранить в базе данных
         // query.getBitNumberz()
         // query.getShift()
         const subwalletId = 0; // ID субкошелька, должно храниться вместе с высоконагруженным кошельком
-        const timeout = 2 * 60 * 60; // Таймаут транзакции, также должно храниться
+        const timeout = 12 * 60 * 60; // Таймаут транзакции, также должно храниться
         const createdAt = Math.floor(Date.now() / 1000) - 60; // Время создания транзакции минус буфер задержки
 
         // Отправка транзакции и получение хеша сообщения для проверки транзакции
@@ -68,7 +67,7 @@ async function run(
             {
                 message: message,
                 mode: 3,
-                query_id: query,
+                query_id: queryHandler,
                 createdAt: createdAt,
                 subwalletId: subwalletId,
                 timeout: timeout,
@@ -94,10 +93,10 @@ async function run(
 
 // Пример вызова функции с тестовыми адресами и деталями jetton
 run(
-    Address.parse("0QBTntndDitJzeAQ2S-lUHu3nB5534-J_1V3RTetWK0etLjz"),
+    Address.parse("0QAjDtVw2efaOCN09IPTPsRSKP1sli-b72V7_Sn794LOFDix"),
     Address.parse("0QAFyfwn13L8oi30vdWBV41zFaHzCa6mJpVEjCeaDUAqmGcO"),
     {
-        address: Address.parse("kQA95AtAgKqGRiClI_T2JL2_DK2h-s2fFx85YukTjRnOl8UI"),
-        amount: 1 * 10 ** 6 // Количество в наименьшей единице jetton
+        address: Address.parse("kQCaMxWTcmReBcLsflJr__2uEp4V-VNYNxFXcOsPs49a9j1o"),
+        amount: 1 * 10 ** 6 // 10**9 = ton or jetton; 10**6 = usdt
     }
 );
