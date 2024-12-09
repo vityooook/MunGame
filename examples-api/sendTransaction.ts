@@ -93,10 +93,10 @@ async function run(
 
 // Пример вызова функции с тестовыми адресами и деталями jetton
 run(
-    Address.parse("0QAjDtVw2efaOCN09IPTPsRSKP1sli-b72V7_Sn794LOFDix"),
+    Address.parse("0QB6ZOQd5htYtmB1qxWkd3c1iBoowxnMR5Rt61EscxJnIiou"),
     Address.parse("0QAFyfwn13L8oi30vdWBV41zFaHzCa6mJpVEjCeaDUAqmGcO"),
     {
-        address: Address.parse("kQCaMxWTcmReBcLsflJr__2uEp4V-VNYNxFXcOsPs49a9j1o"),
+        address: Address.parse("kQBc0K3cZ8o_lU3lW6iplqxREUBOi4yNMGFW_LORwFXmaQDV"),
         amount: 1 * 10 ** 6 // 10**9 = ton or jetton; 10**6 = usdt
     }
 );
