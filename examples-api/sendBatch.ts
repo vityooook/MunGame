@@ -46,7 +46,7 @@ async function runBatch(
             mode: SendMode.PAY_GAS_SEPARATELY, // Отдельная оплата газа
             outMsg: internal({
                 to: jetton.address, // Адрес контракта Jetton
-                value: toNano("0.1"), // TON для комиссии; часть из них вернётся в кошелёк
+                value: toNano("0.05"), // TON для комиссии; часть из них вернётся в кошелёк
                 body: beginCell()
                     .storeUint(0xf8a7ea5, 32) // Opcode для переноса jetton
                     .storeUint(0, 64)
@@ -75,7 +75,7 @@ async function runBatch(
         });
 
         // Инициализация обработчика запросов и получение следующего query ID для хранения в базе данных
-        const queryHandler = HighloadQueryId.fromShiftAndBitNumber(0n, 1n).getNext(); // получить из базы данных // Получить следующий shift и bit number. Сохранить в базе данных
+        const queryHandler = HighloadQueryId.fromShiftAndBitNumber(0n, 0n).getNext(); // получить из базы данных // Получить следующий shift и bit number. Сохранить в базе данных
         const subwalletId = 0; // ID субкошелька, должно храниться вместе с высоконагруженным кошельком
         const timeout = 12 * 60 * 60; // Таймаут транзакции в секундах
         const createdAt = Math.floor(Date.now() / 1000) - 60; // Время создания транзакции минус буфер задержки
@@ -109,10 +109,10 @@ async function runBatch(
 
 // Пример вызова функции с тестовыми адресами и деталями jetton
 runBatch(
-    Address.parse("0QAjDtVw2efaOCN09IPTPsRSKP1sli-b72V7_Sn794LOFDix"),
+    Address.parse("0QB6ZOQd5htYtmB1qxWkd3c1iBoowxnMR5Rt61EscxJnIiou"),
     Address.parse("0QAFyfwn13L8oi30vdWBV41zFaHzCa6mJpVEjCeaDUAqmGcO"),
     {
-        address: Address.parse("kQCaMxWTcmReBcLsflJr__2uEp4V-VNYNxFXcOsPs49a9j1o"),
+        address: Address.parse("kQBc0K3cZ8o_lU3lW6iplqxREUBOi4yNMGFW_LORwFXmaQDV"),
         amount: 1 * 10 ** 6 // Количество jetton в минимальных единицах
     }
 );

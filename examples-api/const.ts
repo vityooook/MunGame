@@ -1,4 +1,4 @@
-export const SUBWALLET_ID = 239;
+export const SUBWALLET_ID = 0;
 
 export const DEFAULT_TIMEOUT = 128;
 

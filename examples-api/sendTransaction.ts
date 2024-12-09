@@ -1,5 +1,5 @@
 import { TonApiClient } from "@ton-api/client";
-import { Address, beginCell, internal, toNano } from '@ton/core';
+import { Address, beginCell, internal, toNano } from '@ton/ton';
 import { HighloadWallet } from "./HighloadWallet";
 import { keyPairFromSecretKey } from "@ton/crypto";
 import { HighloadQueryId } from './HighloadQueryId';
@@ -40,23 +40,23 @@ async function run(
         // Подготовка сообщения для отправки Jetton
         const message = internal({
             to: jetton.address,
-            value: toNano("0.1"), // TON для комиссии; часть из них вернётся в кошелёк
+            value: toNano("0.05"), // TON для комиссии; часть из них вернётся в кошелёк 
             body: beginCell()
                 .storeUint(0xf8a7ea5, 32) // Opcode для переноса jetton
                 .storeUint(0, 64)
-                .storeCoins(BigInt(jetton.amount)) // Количество jetton для переноса
+                .storeCoins(BigInt(jetton.amount)) // Количество jetton для переноса USDT = 10**6; TON = 10**9 
                 .storeAddress(sendTo) // Адрес получателя
                 .storeAddress(highloadWalletAddress) // Адрес для ответа и возврата TON
                 .storeBit(0)
-                .storeCoins(1)
+                .storeCoins(1) 
                 .storeBit(0)
                 .endCell()
         });
 
         // Инициализация обработчика запросов и получение следующего query ID для хранения в базе данных
         const queryHandler = HighloadQueryId.fromShiftAndBitNumber(0n, 0n).getNext(); // получить из базы данных // Получить следующий shift и bit number. Сохранить в базе данных
-        // query.getBitNumberz()
-        // query.getShift()
+        // queryHandler.getBitNumberz()
+        // queryHandler.getShift()
         const subwalletId = 0; // ID субкошелька, должно храниться вместе с высоконагруженным кошельком
         const timeout = 12 * 60 * 60; // Таймаут транзакции, также должно храниться
         const createdAt = Math.floor(Date.now() / 1000) - 60; // Время создания транзакции минус буфер задержки
@@ -66,11 +66,11 @@ async function run(
             walletKeyPair.secretKey,
             {
                 message: message,
-                mode: 3,
+                mode: 3, 
                 query_id: queryHandler,
                 createdAt: createdAt,
                 subwalletId: subwalletId,
-                timeout: timeout,
+                timeout: timeout
             }
         );
 

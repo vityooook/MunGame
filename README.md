@@ -154,8 +154,8 @@ npx blueprint run
   **Пример вывода в консоли:**
 
   ```
-  Public Key: <ваш публичный ключ>
-  Secret Key: <ваш секретный ключ>
+  Address: EQB6ZOQd5htYtmB1qxWkd3c1iBoowxnMR5Rt61EscxJnIsxh
+  Secret Key: 6fe8d661df51e89df611a4273848219267b2eea3d8180ea21ccae86d61ba8e36a9ea1725382b6cd4980305e9aad9d6df57f192a098370758b7b457ec8f413fe7
   ```
 
   **Примечание**: Если адрес технического кошелька не отображается в консоли, используйте [TonViewer](https://testnet.tonviewer.com) для его получения:
