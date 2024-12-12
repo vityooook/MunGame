@@ -29,6 +29,8 @@ export async function checkTransactionStatusTonCenter(
     const baseUrl = 'https://testnet.toncenter.com/api/v3/actions';
     const startTime = Date.now();
 
+    await new Promise(resolve => setTimeout(resolve, 10000)); // 10 sec pause
+
     while (Date.now() - startTime < maxWaitTime) {
         try {
             const url = `${baseUrl}?account=${account}&msg_hash=${msgHash}`;
