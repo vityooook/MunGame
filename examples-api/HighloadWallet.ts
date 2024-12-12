@@ -11,9 +11,9 @@ import {
     SendMode,
     storeMessageRelaxed,
     storeOutList,
-    toNano
-} from '@ton/core';
-import { TonApiClient } from "@ton-api/client";
+    toNano,
+    TonClient
+} from '@ton/ton';
 import { sign } from "@ton/crypto";
 import { OP } from "./const";
 import { HighloadQueryId } from "./HighloadQueryId";
@@ -23,10 +23,10 @@ export const TIMEOUT_SIZE = 22;
 
 export class HighloadWallet {
 
-    constructor(readonly address: Address, readonly client: TonApiClient) {
+    constructor(readonly address: Address, readonly client: TonClient) {
     }
 
-    static connectWallet(address: Address, client: TonApiClient) {
+    static connectWallet(address: Address, client: TonClient) {
         return new HighloadWallet(address, client);
     }
 
@@ -86,7 +86,7 @@ export class HighloadWallet {
             .storeRef(body) // Store Message Body as a reference
             .endCell();
         
-        await this.client.blockchain.sendBlockchainMessage({boc: message})
+        await this.client.sendFile(message.toBoc())
 
         return message.hash().toString("hex");
     }
@@ -170,23 +170,32 @@ export class HighloadWallet {
     }
 
 
-    async getPublicKey(): Promise<Buffer> {
-        const res = (await this.client.blockchain.execGetMethodForBlockchainAccount(this.address, 'get_public_key'));
-        return res.decoded;
+    async getPublicKey(provider: ContractProvider): Promise<Buffer> {
+        const res = (await provider.get('get_public_key', [])).stack;
+        const pubKeyU = res.readBigNumber();
+        return Buffer.from(pubKeyU.toString(16).padStart(32 * 2, '0'), 'hex');
     }
 
-    async getSubwalletId(): Promise<number> {
-        const res = (await this.client.blockchain.execGetMethodForBlockchainAccount(this.address, 'get_subwallet_id'));
-        return res.decoded;
+    async getSubwalletId(provider: ContractProvider): Promise<number> {
+        const res = (await provider.get('get_subwallet_id', [])).stack;
+        return res.readNumber();
     }
 
-    async getTimeout(): Promise<number> {
-        const res = (await this.client.blockchain.execGetMethodForBlockchainAccount(this.address, 'get_timeout'));
-        return res.decoded;
+    async getTimeout(provider: ContractProvider): Promise<number> {
+        const res = (await provider.get('get_timeout', [])).stack;
+        return res.readNumber();
     }
 
-    async getLastCleaned(): Promise<number> {
-        const res = (await this.client.blockchain.execGetMethodForBlockchainAccount(this.address, 'get_last_clean_time'));
-        return res.decoded;
+    async getLastCleaned(provider: ContractProvider): Promise<number> {
+        const res = (await provider.get('get_last_clean_time', [])).stack;
+        return res.readNumber();
+    }
+
+    async getProcessed(provider: ContractProvider, queryId: HighloadQueryId, needClean = true): Promise<boolean> {
+        const res = (await provider.get('processed?', [{'type': 'int', 'value': queryId.getQueryId()}, {
+            'type': 'int',
+            'value': needClean ? -1n : 0n
+        }])).stack;
+        return res.readBoolean();
     }
 }

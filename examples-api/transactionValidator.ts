@@ -1,100 +1,61 @@
-import { TonApiClient } from "@ton-api/client";
+import axios from 'axios';
 
 /**
- * Интерфейс, описывающий детали транзакции.
+ * Интерфейс для ответа TonCenter.
  */
-export interface TransactionDetail {
-    hash: string;
-    bounced: boolean;
-    success: boolean;
-    aborted?: boolean;
-    value?: number; // Добавлено для проверки value
-    // Добавьте другие необходимые поля при необходимости
+interface TonCenterResponse {
+    actions: {
+        success: boolean;
+        details?: any; // Дополнительные детали, если нужны
+    }[];
 }
 
 /**
- * Рекурсивная функция для проверки всех транзакций и их дочерних транзакций.
- * @param transactionData - Объект транзакции для проверки.
- * @returns true, если все транзакции и их дочерние транзакции удовлетворяют условиям, иначе false.
- */
-export function validateTransactions(transactionData: any): boolean {
-    const transaction = transactionData.transaction;
-
-    // Проверяем текущую транзакцию на условия
-    if (transaction.bounced) {
-        console.log(`Транзакция ${transaction.hash} была отклонена (bounced = true).`);
-        return false;
-    }
-
-    // Пропускаем проверки для транзакций с value === 1
-    if (transaction.value === 1) {
-        return true;
-    }
-
-    if (!transaction.success) {
-        console.log(`Транзакция ${transaction.hash} не успешна (success = false).`);
-        return false;
-    }
-
-    // Если есть дочерние транзакции, проверяем их рекурсивно
-    if (transactionData.children && transactionData.children.length > 0) {
-        for (const child of transactionData.children) {
-            if (!validateTransactions(child)) {
-                // Если хотя бы одна дочерняя транзакция не соответствует условиям, возвращаем false
-                return false;
-            }
-        }
-    }
-
-    // Все проверки пройдены
-    return true;
-}
-
-/**
- * Функция для проверки статуса транзакции через TonAPI.
- * @param client - Экземпляр TonApiClient.
- * @param traceId - Идентификатор трассировки транзакции (messageHash).
+ * Проверяет успешность транзакции через TonCenter API.
+ * @param account - Адрес аккаунта.
+ * @param msgHash - Хэш сообщения.
+ * @param apiKey - API-ключ для авторизации.
  * @param interval - Интервал между проверками в миллисекундах.
  * @param maxWaitTime - Максимальное время ожидания в миллисекундах.
- * @returns Promise<boolean> - Результат проверки.
+ * @returns Promise<boolean> - Успешность транзакции.
  */
-export async function checkTransactionStatusTonApi(
-    client: TonApiClient,
-    traceId: string,
+export async function checkTransactionStatusTonCenter(
+    account: string,
+    msgHash: string,
+    apiKey: string | undefined,
     interval: number = 5000,
-    maxWaitTime: number = 120000
+    maxWaitTime: number = 120000,
 ): Promise<boolean> {
+    const baseUrl = 'https://testnet.toncenter.com/api/v3/actions';
     const startTime = Date.now();
-
-    // Ждём 30 секунд перед первой проверкой
-    await new Promise(resolve => setTimeout(resolve, 30000));
 
     while (Date.now() - startTime < maxWaitTime) {
         try {
-            // Получаем трассировку транзакции из TonAPI
-            const response = await client.traces.getTrace(traceId);
+            const url = `${baseUrl}?account=${account}&msg_hash=${msgHash}`;
+            const response = await axios.get<TonCenterResponse>(url, {
+                headers: {
+                    Authorization: `Bearer ${apiKey}`, // Добавляем API-ключ в заголовок
+                },
+            });
 
-            // Проверяем все транзакции и их дочерние транзакции
-            const allTransactionsValid = validateTransactions(response);
+            const actions = response.data.actions;
 
-            if (allTransactionsValid) {
-                console.log('Все транзакции успешно завершены без отклонений.');
-                return true;
+            if (actions.length === 0) {
+                console.log('Транзакция не найдена. Продолжаем проверку...');
             } else {
-                console.log('Транзакция не удовлетворяет условиям. Продолжаем проверку...');
-                return false;
+                const action = actions[0]; // Предполагается, что нас интересует первый элемент
+                if (action.success) {
+                    return true;
+                } else {
+                    return false;
+                }
             }
         } catch (error: any) {
-            // Игнорируем ошибку "Invalid magic"
-            if (error.message && error.message.includes('Invalid magic')) {
-                console.log('Транзакция не найдена. Повторная попытка через несколько секунд...');
-            } else {
-                console.error('Ошибка при получении статуса транзакции:', error.message || error);
-                return false;
-            }
+            console.error('Ошибка при запросе к TonCenter:', error.message || error);
+            return false;
         }
 
-        // Ждём заданный интервал перед следующей проверкой
+        // Ждем перед следующей проверкой
         await new Promise(resolve => setTimeout(resolve, interval));
     }
 

@@ -1,11 +1,11 @@
-import { TonApiClient } from "@ton-api/client";
-import { Address, beginCell, internal, toNano } from '@ton/ton';
+
+import { Address, beginCell, internal, toNano, TonClient } from '@ton/ton';
 import { HighloadWallet } from "./HighloadWallet";
 import { keyPairFromSecretKey } from "@ton/crypto";
 import { HighloadQueryId } from './HighloadQueryId';
 import dotenv from 'dotenv';
 import path from 'path';
-import { checkTransactionStatusTonApi } from './transactionValidator'; // Импортируем функцию
+import { checkTransactionStatusTonCenter } from './transactionValidator'; // Импортируем функцию
 
 // Загрузка переменных окружения из .env файла
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -13,9 +13,9 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 const secretKeyHex = process.env.SECRET_KEY || ""; // Получаем секретный ключ из переменных окружения
 
 // Инициализация TonApiClient с базовым URL тестовой сети и API ключом
-const client = new TonApiClient({
-    baseUrl: 'https://testnet.tonapi.io', // если используете mainnet, измените на https://tonapi.io
-    apiKey: process.env.TON_API_KEY
+const client = new TonClient({
+    endpoint: "https://testnet.toncenter.com/api/v2/jsonRPC",
+    apiKey: process.env.TON_API_KEY // you can get an api key from @tonapibot bot in Telegram
 });
 
 /**
@@ -54,7 +54,7 @@ async function run(
         });
 
         // Инициализация обработчика запросов и получение следующего query ID для хранения в базе данных
-        const queryHandler = HighloadQueryId.fromShiftAndBitNumber(0n, 0n).getNext(); // получить из базы данных // Получить следующий shift и bit number. Сохранить в базе данных
+        const queryHandler = HighloadQueryId.fromShiftAndBitNumber(1002n, 0n).getNext(); // получить из базы данных // Получить следующий shift и bit number. Сохранить в базе данных
         // queryHandler.getBitNumberz()
         // queryHandler.getShift()
         const subwalletId = 0; // ID субкошелька, должно храниться вместе с высоконагруженным кошельком
@@ -77,10 +77,15 @@ async function run(
         console.log(`Транзакция отправлена. Хеш сообщения: ${messageHash}`);
 
         // Проверка статуса транзакции
-        const status = await checkTransactionStatusTonApi(client, messageHash);
+        const status = await checkTransactionStatusTonCenter(
+            highloadWalletAddress.toString(),
+            messageHash,
+            process.env.TON_API_KEY
+
+        );
 
         if (status) {
-            console.log('Процесс завершён успешно.');
+            console.log('Транзакция успешно завершена!');
         } else {
             console.log('Процесс завершён с ошибкой.');
             process.exit(1); // Завершение процесса с кодом ошибки
